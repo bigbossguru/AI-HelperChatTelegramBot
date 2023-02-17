@@ -1,0 +1,22 @@
+[tool.poetry]
+name = "ai-helperchattelegrambot"
+version = "0.1.0"
+description = ""
+authors = ["Eldar Gazizov <kursus1010@gmail.com>"]
+readme = "README.md"
+packages = [{include = "ai_helperchattelegrambot"}]
+
+[tool.poetry.dependencies]
+python = "^3.10"
+openai = "^0.26.5"
+python-telegram-bot = "^20.1"
+selenium = "^4.8.1"
+python-dotenv = "^0.21.1"
+
+
+[tool.poetry.group.dev.dependencies]
+black = "^23.1.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
