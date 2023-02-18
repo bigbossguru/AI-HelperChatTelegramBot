@@ -1,3 +1,4 @@
+import typing
 import os
 import openai
 import requests
@@ -25,7 +26,7 @@ def answer(msg: str):
     return response["choices"][0]["text"]
 
 
-def genrandimage(msg: str = None):
+def genrandimage(msg: typing.Optional[str] = None):
     msg = msg or answer("describe a random image")
     response = openai.Image.create(prompt=msg, n=1, size="512x512")
     image_url = response["data"][0]["url"]

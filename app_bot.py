@@ -8,21 +8,23 @@ from telegram.ext import filters, MessageHandler
 from lib.openai_models import answer, genrandimage
 from lib.visa import visa_checker
 from lib.translator import translate
+from lib.text_formatting import text_reduce, text_validation
 
 from dotenv import load_dotenv
 
-load_dotenv()
 
+load_dotenv()
 logging.basicConfig(format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO)
-desc_bot = """<b>AI Chat</b>:
- - type a normal message
-<b>AI Generate Image</b>:
+
+desc_bot = """🧠 <b>AI Chat</b>:
+ - type a normal message\n
+🌅 <b>AI Generate Image</b>:
  - for a random image, click command /randimage
- - for your own image, type command /myimage [desc]
-<b>Check Visa</b>:
+ - for your image, type command /myimage [desc]\n
+📰 <b>Check Visa</b>:
  - type command /myvisa [number]
-   <i>number format: XXXXX-DP-2023</i>
-<b>Translator</b>:
+   <i>number format: XXXXX-DP-2023</i>\n
+📒 <b>Translator</b>:
  - type command /translate [text]"""
 
 
@@ -37,31 +39,73 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def randimage(update: Update, context: ContextTypes.DEFAULT_TYPE):
     img, msg = genrandimage()
-    await context.bot.send_photo(chat_id=update.effective_chat.id, photo=img, caption=msg)
+    await context.bot.send_photo(
+        chat_id=update.effective_chat.id,
+        photo=img,
+        caption=text_reduce(msg),
+        reply_to_message_id=update.message.id,
+    )
 
 
-async def mycommon(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    flag = True
-    cmd, msg = update.message.text[:8], update.message.text[8:]
-    if cmd == "/myimage" and len(msg) > 5:
-        flag = False
-        img, msg = genrandimage(msg)
-        await context.bot.send_photo(chat_id=update.effective_chat.id, photo=img, caption=msg)
-    cmd, msg = update.message.text[:7], update.message.text[7:]
-    if cmd == "/myvisa" and len(msg) > 5:
-        flag = False
-        await context.bot.send_photo(chat_id=update.effective_chat.id, photo=visa_checker(msg))
-    cmd, msg = update.message.text[:10], update.message.text[10:]
-    if cmd == "/translate" and len(msg) >= 1:
-        flag = False
-        await context.bot.send_message(chat_id=update.effective_chat.id, text=translate(msg, "ru"))
-    if flag:
-        await update.effective_message.reply_text("Wrong input data, please try again")
+async def myimage(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user_input_data = " ".join(context.args)
+    if user_input_data:
+        img, _ = genrandimage(user_input_data)
+        return await context.bot.send_photo(
+            chat_id=update.effective_chat.id,
+            photo=img,
+            caption=user_input_data,
+            reply_to_message_id=update.message.id,
+        )
+    return await context.bot.send_message(
+        chat_id=update.effective_chat.id,
+        parse_mode=telegram.constants.ParseMode.MARKDOWN,
+        reply_to_message_id=update.message.id,
+        text="🌅 To generate image:\n\nType /myimage followed by your prompt to generate an image using DALL-E.\n\n"
+        + "Example:\n`/myimage digital illustration of medieval town, detailed, fantasy, 4K, trending on artstation`",
+    )
+
+
+async def myvisa(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user_input_data = " ".join(context.args)
+    if user_input_data and text_validation(user_input_data):
+        return await context.bot.send_photo(
+            chat_id=update.effective_chat.id,
+            photo=visa_checker(user_input_data),
+            reply_to_message_id=update.message.id,
+        )
+    return await context.bot.send_message(
+        chat_id=update.effective_chat.id,
+        parse_mode=telegram.constants.ParseMode.HTML,
+        reply_to_message_id=update.message.id,
+        text="📰 <b>To check visa</b>:\n\nType /myvisa followed by your prompt.\n"
+        + "<i>format your number: XXXXX-DP-2023</i>\n\n"
+        + "Example:\n<code>/myvisa 01581-DP-2023</code>",
+    )
+
+
+async def mytranslate(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user_input_data = " ".join(context.args)
+    if user_input_data:
+        return await context.bot.send_message(
+            chat_id=update.effective_chat.id,
+            text=translate(user_input_data, "ru"),
+            reply_to_message_id=update.message.id,
+        )
+    return await context.bot.send_message(
+        chat_id=update.effective_chat.id,
+        parse_mode=telegram.constants.ParseMode.HTML,
+        reply_to_message_id=update.message.id,
+        text="📒 <b>To translate text</b>:\n\nType /translate followed by your prompt.\n\n"
+        + "Example:\n<code>/translate Hello world!</code>",
+    )
 
 
 async def description(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await context.bot.send_message(
-        chat_id=update.effective_chat.id, text=desc_bot, parse_mode=telegram.constants.ParseMode.HTML
+        chat_id=update.effective_chat.id,
+        text=desc_bot,
+        parse_mode=telegram.constants.ParseMode.HTML,
     )
 
 
@@ -71,20 +115,11 @@ async def response(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 if __name__ == "__main__":
     application = ApplicationBuilder().token(os.environ.get("TELEGRAM_BOT_TOKEN")).build()
-
-    start_handler = CommandHandler("start", start)
-    application.add_handler(start_handler)
-
-    randimage_handler = CommandHandler("randimage", randimage)
-    application.add_handler(randimage_handler)
-
-    desc_handler = CommandHandler("description", description)
-    application.add_handler(desc_handler)
-
-    mycommon_handler = MessageHandler(filters.COMMAND & filters.TEXT, mycommon, False)
-    application.add_handler(mycommon_handler)
-
-    echo_handler = MessageHandler(filters.TEXT & (~filters.COMMAND), response)
-    application.add_handler(echo_handler)
-
+    application.add_handler(CommandHandler("start", start))
+    application.add_handler(CommandHandler("myvisa", myvisa))
+    application.add_handler(CommandHandler("myimage", myimage))
+    application.add_handler(CommandHandler("randimage", randimage))
+    application.add_handler(CommandHandler("translate", mytranslate))
+    application.add_handler(CommandHandler("description", description))
+    application.add_handler(MessageHandler(filters.TEXT & (~filters.COMMAND), response))
     application.run_polling()
