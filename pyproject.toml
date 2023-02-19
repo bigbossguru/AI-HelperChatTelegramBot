@@ -12,6 +12,8 @@ openai = "^0.26.5"
 python-telegram-bot = "^20.1"
 selenium = "^4.8.1"
 python-dotenv = "^0.21.1"
+speechrecognition = "^3.9.0"
+pydub = "^0.25.1"
 
 
 [tool.poetry.group.dev.dependencies]

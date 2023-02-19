@@ -8,7 +8,8 @@ from telegram.ext import filters, MessageHandler
 from lib.openai_models import answer, genrandimage
 from lib.visa import visa_checker
 from lib.translator import translate
-from lib.text_formatting import text_reduce, text_validation
+from lib.utils.text_formatting import text_reduce, text_validation
+from lib.speech import voice_recognition
 
 from dotenv import load_dotenv
 
@@ -109,6 +110,16 @@ async def description(update: Update, context: ContextTypes.DEFAULT_TYPE):
     )
 
 
+async def myvoice(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    audio = await context.bot.get_file(update.message.voice.file_id)
+    file = await audio.download_to_drive()
+    return await context.bot.send_message(
+        chat_id=update.effective_chat.id,
+        text=voice_recognition(file),
+        reply_to_message_id=update.message.id,
+    )
+
+
 async def response(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await context.bot.send_message(chat_id=update.effective_chat.id, text=answer(update.message.text))
 
@@ -122,4 +133,5 @@ if __name__ == "__main__":
     application.add_handler(CommandHandler("translate", mytranslate))
     application.add_handler(CommandHandler("description", description))
     application.add_handler(MessageHandler(filters.TEXT & (~filters.COMMAND), response))
+    application.add_handler(MessageHandler(filters.VOICE & (~filters.COMMAND), myvoice))
     application.run_polling()

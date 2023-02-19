@@ -16,7 +16,7 @@ def answer(msg: str):
         model="text-davinci-003",
         prompt=msg,
         temperature=0.9,
-        max_tokens=1024,
+        max_tokens=2048,
         top_p=1,
         frequency_penalty=0.0,
         presence_penalty=0.6,
