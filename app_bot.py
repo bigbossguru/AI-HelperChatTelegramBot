@@ -18,7 +18,7 @@ load_dotenv()
 logging.basicConfig(format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO)
 
 desc_bot = """🧠 <b>AI Chat</b>:
- - type a normal message\n
+ - type command /chat [text]\n
 🌅 <b>AI Generate Image</b>:
  - for a random image, click command /randimage
  - for your image, type command /myimage [desc]\n
@@ -26,7 +26,9 @@ desc_bot = """🧠 <b>AI Chat</b>:
  - type command /myvisa [number]
    <i>number format: XXXXX-DP-2023</i>\n
 📒 <b>Translator</b>:
- - type command /translate [text]"""
+ - type command /translate [text]\n
+🗣 <b>Voice message to text</b>:
+ - send a normal voice message"""
 
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -120,18 +122,31 @@ async def myvoice(update: Update, context: ContextTypes.DEFAULT_TYPE):
     )
 
 
-async def response(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await context.bot.send_message(chat_id=update.effective_chat.id, text=answer(update.message.text))
+async def gptchat(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user_input_data = " ".join(context.args)
+    if user_input_data:
+        return await context.bot.send_message(
+            chat_id=update.effective_chat.id,
+            text=answer(user_input_data),
+            reply_to_message_id=update.message.id,
+        )
+    return await context.bot.send_message(
+        chat_id=update.effective_chat.id,
+        parse_mode=telegram.constants.ParseMode.HTML,
+        reply_to_message_id=update.message.id,
+        text="🧠 <b>To ask on the GPTChat</b>:\n\nType /chat followed by your prompt.\n\n"
+        + "Example:\n<code>/chat Hello world!</code>",
+    )
 
 
 if __name__ == "__main__":
     application = ApplicationBuilder().token(os.environ.get("TELEGRAM_BOT_TOKEN")).build()
     application.add_handler(CommandHandler("start", start))
+    application.add_handler(CommandHandler("chat", gptchat))
     application.add_handler(CommandHandler("myvisa", myvisa))
     application.add_handler(CommandHandler("myimage", myimage))
     application.add_handler(CommandHandler("randimage", randimage))
     application.add_handler(CommandHandler("translate", mytranslate))
     application.add_handler(CommandHandler("description", description))
-    application.add_handler(MessageHandler(filters.TEXT & (~filters.COMMAND), response))
     application.add_handler(MessageHandler(filters.VOICE & (~filters.COMMAND), myvoice))
     application.run_polling()
