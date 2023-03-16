@@ -4,20 +4,42 @@ version = "0.1.0"
 description = ""
 authors = ["Eldar Gazizov <kursus1010@gmail.com>"]
 readme = "README.md"
-packages = [{include = "ai_helperchattelegrambot"}]
+packages = [{include = "aichattelegrambot"}]
 
 [tool.poetry.dependencies]
-python = "^3.10"
-openai = "^0.26.5"
+python = "^3.11"
+openai = "^0.27.2"
 python-telegram-bot = "^20.1"
 selenium = "^4.8.1"
 python-dotenv = "^0.21.1"
-speechrecognition = "^3.9.0"
 pydub = "^0.25.1"
-
+aiohttp = "^3.8.4"
 
 [tool.poetry.group.dev.dependencies]
 black = "^23.1.0"
+mypy = "^1.1.1"
+pylint = "^2.17.0"
+
+[tool.pylint.'MESSAGES CONTROL']
+max-line-length = 120
+disable = [
+    "no-member",
+    "invalid-name",
+    "missing-timeout",
+    "wrong-import-order",
+    "redefined-outer-name",
+    "misplaced-bare-raise",
+    "broad-exception-caught",
+    "broad-exception-raised",
+    "too-few-public-methods",
+    "missing-module-docstring",
+    "not-async-context-manager",
+    "missing-function-docstring",
+    "logging-fstring-interpolation",
+]
+
+[tool.black]
+line-length = 120
 
 [build-system]
 requires = ["poetry-core"]

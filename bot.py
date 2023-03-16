@@ -1,51 +1,39 @@
 import os
-import logging
 import telegram
 from telegram import Update
-from telegram.ext import ApplicationBuilder, ContextTypes, CommandHandler
-from telegram.ext import filters, MessageHandler
-
-from lib.openai_models import answer, genrandimage
-from lib.visa import visa_checker
-from lib.translator import translate
-from lib.utils.text_formatting import text_reduce, text_validation
-from lib.speech import voice_recognition
-
-from dotenv import load_dotenv
+from telegram.ext import (
+    ApplicationBuilder,
+    ContextTypes,
+    CommandHandler,
+    filters,
+    MessageHandler,
+)
 
 
-load_dotenv()
-logging.basicConfig(format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO)
-
-desc_bot = """🧠 <b>AI Chat</b>:
- - type command /chat [text]\n
-🌅 <b>AI Generate Image</b>:
- - for a random image, click command /randimage
- - for your image, type command /myimage [desc]\n
-📰 <b>Check Visa</b>:
- - type command /myvisa [number]
-   <i>number format: XXXXX-DP-2023</i>\n
-📒 <b>Translator</b>:
- - type command /translate [text]\n
-🗣 <b>Voice message to text</b>:
- - send a normal voice message"""
+from aichattelegrambot.chat import gpt_response
+from aichattelegrambot.visa import visa_checker
+from aichattelegrambot.translator import translate
+from aichattelegrambot.image import image_generator
+from aichattelegrambot.voice import voice_recognition
+from aichattelegrambot.utils.message_templates import desc_bot
 
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await context.bot.send_photo(
-        chat_id=update.effective_chat.id,
-        photo=open("media/ai.jpeg", "rb").read(),
-        caption="Welcome to the Human being AI Chat!\nAsk me anything.\n\n" + desc_bot,
-        parse_mode=telegram.constants.ParseMode.HTML,
-    )
+    with open("media/ai.jpeg", "rb") as img:
+        await context.bot.send_photo(
+            chat_id=update.effective_chat.id,
+            photo=img.read(),
+            caption="Welcome to the Human being AI Chat!\nAsk me anything.\n\n" + desc_bot,
+            parse_mode=telegram.constants.ParseMode.HTML,
+        )
 
 
 async def randimage(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    img, msg = genrandimage()
+    img, msg = await image_generator()
     await context.bot.send_photo(
         chat_id=update.effective_chat.id,
         photo=img,
-        caption=text_reduce(msg),
+        caption=msg,
         reply_to_message_id=update.message.id,
     )
 
@@ -53,7 +41,7 @@ async def randimage(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def myimage(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_input_data = " ".join(context.args)
     if user_input_data:
-        img, _ = genrandimage(user_input_data)
+        img, _ = await image_generator(user_input_data)
         return await context.bot.send_photo(
             chat_id=update.effective_chat.id,
             photo=img,
@@ -71,20 +59,23 @@ async def myimage(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def myvisa(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_input_data = " ".join(context.args)
-    if user_input_data and text_validation(user_input_data):
+    try:
+        if not user_input_data:
+            raise
         return await context.bot.send_photo(
             chat_id=update.effective_chat.id,
             photo=visa_checker(user_input_data),
             reply_to_message_id=update.message.id,
         )
-    return await context.bot.send_message(
-        chat_id=update.effective_chat.id,
-        parse_mode=telegram.constants.ParseMode.HTML,
-        reply_to_message_id=update.message.id,
-        text="📰 <b>To check visa</b>:\n\nType /myvisa followed by your prompt.\n"
-        + "<i>format your number: XXXXX-DP-2023</i>\n\n"
-        + "Example:\n<code>/myvisa 01581-DP-2023</code>",
-    )
+    except Exception:
+        return await context.bot.send_message(
+            chat_id=update.effective_chat.id,
+            parse_mode=telegram.constants.ParseMode.HTML,
+            reply_to_message_id=update.message.id,
+            text="📰 <b>To check visa</b>:\n\nType /myvisa followed by your prompt.\n"
+            + "<i>format your number: [12345-XX/CC-YYYY] or [12345/CC-YYYY]</i>\n\n"
+            + "Example:\n<code>/myvisa 01581/DP-2023</code>",
+        )
 
 
 async def mytranslate(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -92,7 +83,7 @@ async def mytranslate(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if user_input_data:
         return await context.bot.send_message(
             chat_id=update.effective_chat.id,
-            text=translate(user_input_data, "ru"),
+            text=await translate(user_input_data, "ru"),
             reply_to_message_id=update.message.id,
         )
     return await context.bot.send_message(
@@ -127,7 +118,7 @@ async def gptchat(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if user_input_data:
         return await context.bot.send_message(
             chat_id=update.effective_chat.id,
-            text=answer(user_input_data),
+            text=gpt_response(user_input_data),
             reply_to_message_id=update.message.id,
         )
     return await context.bot.send_message(
@@ -140,7 +131,7 @@ async def gptchat(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 if __name__ == "__main__":
-    application = ApplicationBuilder().token(os.environ.get("TELEGRAM_BOT_TOKEN")).build()
+    application = ApplicationBuilder().token(os.environ["TELEGRAM_BOT_TOKEN"]).build()
     application.add_handler(CommandHandler("start", start))
     application.add_handler(CommandHandler("chat", gptchat))
     application.add_handler(CommandHandler("myvisa", myvisa))
