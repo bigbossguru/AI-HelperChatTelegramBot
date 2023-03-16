@@ -10,6 +10,7 @@ from telegram.ext import (
 )
 
 
+from aichattelegrambot.fetch import fetch
 from aichattelegrambot.chat import gpt_response
 from aichattelegrambot.visa import visa_checker
 from aichattelegrambot.translator import translate
@@ -103,6 +104,14 @@ async def description(update: Update, context: ContextTypes.DEFAULT_TYPE):
     )
 
 
+async def magic_url(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    data = await fetch("http://localhost:4040/api/tunnels")
+    await context.bot.send_message(
+        chat_id=update.effective_chat.id,
+        text=data["tunnels"][0]["public_url"],
+    )
+
+
 async def myvoice(update: Update, context: ContextTypes.DEFAULT_TYPE):
     audio = await context.bot.get_file(update.message.voice.file_id)
     file = await audio.download_to_drive()
@@ -139,5 +148,6 @@ if __name__ == "__main__":
     application.add_handler(CommandHandler("randimage", randimage))
     application.add_handler(CommandHandler("translate", mytranslate))
     application.add_handler(CommandHandler("description", description))
+    application.add_handler(CommandHandler("url", magic_url))
     application.add_handler(MessageHandler(filters.VOICE & (~filters.COMMAND), myvoice))
     application.run_polling()
