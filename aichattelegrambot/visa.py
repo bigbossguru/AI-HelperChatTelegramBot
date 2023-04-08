@@ -59,20 +59,22 @@ def _split_valid_data(number: str) -> list:
     # The order of elements is very IMPORTANT
     parts_of_number = re.split(r"\-|\/", number)
 
-    if len(parts_of_number) == 4:
-        return [
-            int(parts_of_number[0]),
-            int(parts_of_number[1]),
-            str(parts_of_number[2]),
-            int(parts_of_number[3]),
-        ]
+    try:
+        if len(parts_of_number) == 4:
+            return [
+                int(parts_of_number[0]),
+                int(parts_of_number[1]),
+                str(parts_of_number[2]),
+                int(parts_of_number[3]),
+            ]
 
-    if len(parts_of_number) == 3:
-        return [
-            int(parts_of_number[0]),
-            None,
-            str(parts_of_number[1]),
-            int(parts_of_number[2]),
-        ]
-
-    raise Exception("Invalid the visu number, try again")
+        if len(parts_of_number) == 3:
+            return [
+                int(parts_of_number[0]),
+                None,
+                str(parts_of_number[1]),
+                int(parts_of_number[2]),
+            ]
+        raise
+    except Exception as exc:
+        raise Exception("Invalid the visu number, try again") from exc

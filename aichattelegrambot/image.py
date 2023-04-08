@@ -15,7 +15,7 @@ async def image_generator(msg: typing.Optional[str] = None) -> typing.Tuple[byte
     :param typing.Optional[str] msg: the user text, defaults to None
     :return typing.Tuple[bytes, str]: image and message
     """
-    msg = msg or gpt_response("describe a random picture", 500)
+    msg = msg or gpt_response("describe a random image or photo or picture", 500)
     msg += " realistic, 4k, high detail, high quilty"
     response = openai.Image.create(prompt=msg, n=1, size="512x512")
     image_url = response["data"][0]["url"]
