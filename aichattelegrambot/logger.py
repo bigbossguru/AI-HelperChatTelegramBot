@@ -6,8 +6,8 @@ logging.basicConfig(
     format="%(asctime)s [%(levelname)s] - [%(filename)s > %(funcName)s()] - %(message)s",
     datefmt="%H:%M:%S",
     handlers=[
-        logging.FileHandler("bot_logger.log"),
-        logging.StreamHandler(sys.stdout),
+        logging.FileHandler("bot_logger.log", mode="w"),
+        # logging.StreamHandler(sys.stdout),
     ],
 )
 

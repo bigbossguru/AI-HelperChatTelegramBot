@@ -11,7 +11,7 @@ from telegram.ext import (
     CallbackContext,
 )
 
-# import aichattelegrambot.logger  # type: ignore
+import aichattelegrambot.logger  # type: ignore
 from aichattelegrambot.fetch import fetch
 from aichattelegrambot.chat import gpt_response
 from aichattelegrambot.visa import visa_checker
@@ -19,6 +19,7 @@ from aichattelegrambot.translator import translate
 from aichattelegrambot.image import image_generator
 from aichattelegrambot.voice import voice_recognition
 from aichattelegrambot.utils.message_templates import desc_bot
+from aichattelegrambot.utils.unavailability import unavailable_service
 
 from financeanalysis.analysis import ta_analysis
 
@@ -34,6 +35,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 async def randimage(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    return await unavailable_service(update, context)
     try:
         img, msg = await image_generator()
         await context.bot.send_photo(
@@ -51,6 +53,7 @@ async def randimage(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 async def myimage(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    return await unavailable_service(update, context)
     user_input_data = " ".join(context.args)
     if not user_input_data:
         return await context.bot.send_message(
@@ -141,6 +144,7 @@ async def myvoice(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 async def gptchat(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    return await unavailable_service(update, context)
     user_input_data = " ".join(context.args)
     if not user_input_data:
         return await context.bot.send_message(
@@ -178,5 +182,5 @@ if __name__ == "__main__":
     application.add_handler(MessageHandler(filters.VOICE & (~filters.COMMAND), myvoice))
 
     job = application.job_queue
-    job.run_repeating(callback=fin_analysis, interval=datetime.timedelta(minutes=1))
+    job.run_daily(callback=fin_analysis, time=datetime.time(hour=9))
     application.run_polling()
