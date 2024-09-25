@@ -1,7 +1,14 @@
+import os
 import re
+import random
+import platform
 from time import sleep
+
 from selenium import webdriver
 from selenium.webdriver.common.by import By
+from selenium.webdriver.common.keys import Keys
+from selenium.webdriver.chrome.service import Service as ChromeService
+from webdriver_manager.chrome import ChromeDriverManager
 
 
 def visa_checker(visa_number: str) -> bytes:
@@ -12,38 +19,58 @@ def visa_checker(visa_number: str) -> bytes:
     :return bytes: status image
     """
     parts_of_number = _split_valid_data(visa_number)
-    URL = "https://frs.gov.cz/en/ioff/application-status"
+    URL = "https://frs.gov.cz/informace-o-stavu-rizeni/"
 
     options = webdriver.ChromeOptions()
-    options.add_argument("--headless")
+    # options.add_argument("--headless=new")
+    options.add_argument("--start-maximized")
+    options.add_argument("--ignore-certificate-errors")
+    options.add_argument("--incognito")
     options.add_argument("--no-sandbox")
     options.add_argument("--disable-extensions")
     options.add_argument("--disable-gpu")
 
-    with webdriver.Chrome(options=options) as driver:
+    with webdriver.Chrome(options=options, service=_get_chrome_service()) as driver:
         driver.get(URL)
+        sleep(1.5)
+
+        cookie_cancel_button = driver.find_element(By.XPATH, "//button[text()='Odmítnout všechny']")
+        cookie_cancel_button.click()
 
         # The order of elements is very IMPORTANT
         form_inputs = [
-            driver.find_element(By.NAME, "ioff_application_number"),
-            driver.find_element(By.NAME, "ioff_application_number_fake"),
-            driver.find_element(By.NAME, "ioff_application_code"),
-            driver.find_element(By.NAME, "ioff_application_year"),
+            driver.find_element(By.NAME, "proceedings.referenceNumber"),
+            driver.find_element(By.NAME, "proceedings.additionalSuffix"),
         ]
+        form_inputs.extend(
+            driver.find_elements(By.XPATH, "//div[@class='react-select__input']//input")
+        )
 
         for gui_element, part_visu in zip(form_inputs, parts_of_number):
             if part_visu:
                 gui_element.send_keys(part_visu)
-            sleep(0.5)
-        sleep(0.5)
+                if "autocapitalize" in gui_element.get_attribute("outerHTML"):
+                    gui_element.send_keys(Keys.RETURN)
+            sleep(random.uniform(0.5, 0.8))
+        sleep(random.uniform(0.5, 0.8))
 
-        button_op = driver.find_element(By.NAME, "op")
-        button_op.click()
-        sleep(0.5)
+        submit_button = driver.find_element(By.XPATH, "//button[text()='Ověřit']")
+        submit_button.click()
+        sleep(1.5)
 
         website_content = driver.find_element(By.CLASS_NAME, "alert")
+        sleep(random.uniform(0.5, 0.8))
+
         img = website_content.screenshot_as_png
         return img
+
+
+def _get_chrome_service() -> ChromeService:
+    if platform.machine() == "aarch64":
+        chromedriver_path = os.getenv("CHROMEDRIVER", "chromedriver")
+        return ChromeService(executable_path=chromedriver_path)
+    else:
+        return ChromeService(ChromeDriverManager().install())
 
 
 def _split_valid_data(number: str) -> list:
@@ -78,3 +105,5 @@ def _split_valid_data(number: str) -> list:
         raise
     except Exception as exc:
         raise Exception("Invalid the visu number, try again") from exc
+
+visa_checker("22602/TP-2024")

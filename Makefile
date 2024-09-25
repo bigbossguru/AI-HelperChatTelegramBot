@@ -15,3 +15,10 @@ tmp-remove:
 	rm -rf aichattelegrambot/utils/__pycache__
 	rm -rf financeanalysis/__pycache__
 	rm -rf bot_logger.log
+
+service:
+	sudo cp visa.service /etc/systemd/system/visa.service
+	sudo systemctl daemon-reload
+	sudo systemctl enable visa.service
+	sudo systemctl start visa.service
+	sudo systemctl status visa.service

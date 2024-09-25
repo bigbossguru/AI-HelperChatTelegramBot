@@ -1,0 +1,13 @@
+[Unit]
+Description=Visa Checker Bot
+After=multi-user.target
+
+[Service]
+User=boss
+Type=simple
+WorkingDirectory=/home/boss/dev/AI-HelperChatTelegramBot
+ExecStart=/home/boss/dev/AI-HelperChatTelegramBot/.venv/bin/python3 bot.py
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
