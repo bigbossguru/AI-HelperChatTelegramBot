@@ -22,7 +22,7 @@ def visa_checker(visa_number: str) -> bytes:
     URL = "https://frs.gov.cz/informace-o-stavu-rizeni/"
 
     options = webdriver.ChromeOptions()
-    # options.add_argument("--headless=new")
+    options.add_argument("--headless")
     options.add_argument("--start-maximized")
     options.add_argument("--ignore-certificate-errors")
     options.add_argument("--incognito")
